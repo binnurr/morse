@@ -48,7 +48,7 @@ class MocapControl(morse.core.actuator.Actuator):
             "right knee position")
 
     def __init__(self, obj, parent=None):
-        logger.info('%s initialization' % obj.name)
+        logger.info('%s initialization of' % obj.name)
         # Call the constructor of the parent class
         morse.core.actuator.Actuator.__init__(self, obj, parent)
 
@@ -105,7 +105,6 @@ class MocapControl(morse.core.actuator.Actuator):
                 self._foot_empty_r = obj
 
         logger.info('Component initialized')
-
 
     def default_action(self):
         """ Apply the positions read to the IK targets of the joints """
