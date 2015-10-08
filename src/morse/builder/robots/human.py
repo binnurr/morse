@@ -55,6 +55,7 @@ class Human(GroundRobot):
         :param filename: the human model. Default: 'human_rig'
         """
         GroundRobot.__init__(self, filename, name)
+        self.properties(classpath = "morse.robots.human.Human")
 
         self.armature = None
 
