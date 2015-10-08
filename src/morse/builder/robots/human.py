@@ -1,7 +1,7 @@
 import logging; logger = logging.getLogger("morserobots." + __name__)
 from morse.builder import bpymorse
 from morse.builder import GroundRobot
-from morse.builder.actuators import Armature
+from morse.builder.actuators import Armature, Keyboard
 from morse.builder.sensors import ArmaturePose
 
 class Human(GroundRobot):
@@ -77,6 +77,9 @@ class Human(GroundRobot):
             self.joint_states = ArmaturePose("joint_states")
             self.armature.append(self.joint_states)
 
+        self.keyboard = Keyboard()
+        self.keyboard.properties(Speed=1.15)
+        self.append(self.keyboard)
 
     def add_interface(self, interface):
         if interface == "socket":
