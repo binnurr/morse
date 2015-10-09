@@ -120,6 +120,8 @@ class Waypoint(morse.core.actuator.Actuator):
         self.local_data['tolerance'] = 0.5
         self.local_data['speed'] = self._speed
 
+        self.robot_parent.move_status = "Arrived"
+
         # Identify an object as the target of the motion
         try:
             wp_name = self.bge_object['Target']
@@ -195,6 +197,8 @@ class Waypoint(morse.core.actuator.Actuator):
         self.local_data['tolerance'] = tolerance
         self.local_data['speed'] = speed
 
+        self.robot_parent.move_status = "Transit"
+
         return True
 
 
@@ -218,6 +222,8 @@ class Waypoint(morse.core.actuator.Actuator):
         self.local_data['z'] = z
         self.local_data['tolerance'] = tolerance
         self.local_data['speed'] = speed
+
+        self.robot_parent.move_status = "Transit"
 
     def interrupt(self):
         self.local_data['x'] = self.position_3d.x
@@ -280,12 +286,20 @@ class Waypoint(morse.core.actuator.Actuator):
         v = 0
         rz = 0
 
+        self._previous_destination = self._destination
+
         self._destination = [ self.local_data['x'],
                               self.local_data['y'],
                               self.local_data['z'] ]
         self._projection = [ self.local_data['x'],
                              self.local_data['y'],
                              self.bge_object.worldPosition[2] ]
+
+        # Do nothing at all if we already are at destination and
+        # no new destination has been received.
+        if parent.move_status == "Arrived" and \
+           self._destination == self._previous_destination:
+               return
 
         logger.debug("Robot {0} move status: '{1}'".format(
                      parent.bge_object.name, parent.move_status))
