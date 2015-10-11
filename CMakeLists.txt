@@ -15,13 +15,12 @@ endif()
 
 option(BUILD_CORE_SUPPORT "Build and install morse core" ON)
 option(BUILD_DOC_SUPPORT "Build and install morse documentation (Requiere Sphinx)" OFF)
-
 option(BUILD_POCOLIBS_SUPPORT "Build pocolibs framework support" ON)
 option(BUILD_YARP_SUPPORT "Build yarp framework support" ON)
 option(BUILD_ROS_SUPPORT "Build ROS middleware support" ON)
 option(BUILD_MOOS_SUPPORT "Build MOOS middleware support" ON)
+option(BUILD_MAVLINK_SUPPORT "Build Mavlink middleware support" ON)
 option(BUILD_HLA_SUPPORT "Build HLA middleware support. Also used for distributed HLA simulation." ON)
-
 option(PYMORSE_SUPPORT "Build and install the Python bindings for MORSE." ON)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/config/)
@@ -168,6 +167,12 @@ ELSE()
 		COMMAND ${CMAKE_COMMAND} -E make_directory ${SPHINX_FALSE_PYTHON_ENV}/pymoos
 		COMMAND ${CMAKE_COMMAND} -E touch ${SPHINX_FALSE_PYTHON_ENV}/pymoos/__init__.py
 		COMMAND ${CMAKE_COMMAND} -E touch ${SPHINX_FALSE_PYTHON_ENV}/pymoos/MOOSCommClient.py
+
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${SPHINX_FALSE_PYTHON_ENV}/pymavlink/dialects/v10/
+		COMMAND ${CMAKE_COMMAND} -E touch ${SPHINX_FALSE_PYTHON_ENV}/pymavlink/dialects/v10/__init__.py
+		COMMAND ${CMAKE_COMMAND} -E touch ${SPHINX_FALSE_PYTHON_ENV}/pymavlink/dialects/v10/common.py
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${SPHINX_FALSE_PYTHON_ENV}/pymavlink/mavutil
+		COMMAND ${CMAKE_COMMAND} -E touch ${SPHINX_FALSE_PYTHON_ENV}/pymavlink/__init__.py
 
 		COMMAND ${CMAKE_COMMAND} -E touch ${SPHINX_FALSE_PYTHON_ENV}/yarp.py
 		COMMAND ${CMAKE_COMMAND} -DSPHINX_FALSE_PYTHON_ENV=${SPHINX_FALSE_PYTHON_ENV} -P ${CMAKE_CURRENT_SOURCE_DIR}/config/generate_false_env.cmake

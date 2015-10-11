@@ -39,7 +39,8 @@ MORSE_DATASTREAM_MODULE = {
     'pocolibs': 'morse.middleware.pocolibs_datastream.PocolibsDatastreamManager',
     'text': 'morse.middleware.text_datastream.TextDatastreamManager',
     'moos': 'morse.middleware.moos_datastream.MOOSDatastreamManager',
-    'hla': 'morse.middleware.hla_datastream.HLADatastreamManager'
+    'hla': 'morse.middleware.hla_datastream.HLADatastreamManager',
+    'mavlink': 'morse.middleware.mavlink_datastream.MavlinkDatastreamManager',
 }
 
 MORSE_MODIFIER_DICT = {
@@ -132,7 +133,8 @@ MORSE_DATASTREAM_DICT = {
         "default": {
             "socket": INTERFACE_DEFAULT_OUT,
             "yarp": INTERFACE_DEFAULT_OUT,
-            "text": INTERFACE_DEFAULT_OUT
+            "text": INTERFACE_DEFAULT_OUT,
+            "mavlink": 'morse.middleware.mavlink.attitude.AttitudeSensor',
             }
         },
     "morse.sensors.barometer.Barometer": {
@@ -263,7 +265,8 @@ MORSE_DATASTREAM_DICT = {
             "yarp": INTERFACE_DEFAULT_OUT,
             "text": INTERFACE_DEFAULT_OUT,
             "pocolibs": ['morse.middleware.pocolibs.sensors.pom.PomSensorPoster',
-                         'morse.middleware.pocolibs.sensors.pom.PomPoster']
+                         'morse.middleware.pocolibs.sensors.pom.PomPoster'],
+            "mavlink": 'morse.middleware.mavlink.odometry_to_local_ned.OdometrySensor'
             }
         },
     "morse.sensors.magnetometer.Magnetometer": {
@@ -432,6 +435,7 @@ MORSE_DATASTREAM_DICT = {
         "default": {
             "socket": INTERFACE_DEFAULT_IN,
             "yarp": INTERFACE_DEFAULT_IN,
+            "mavlink": "morse.middleware.mavlink.read_attitude_target.AttitudeTarget",
             }
         },
     "morse.actuators.rotorcraft_velocity.RotorcraftVelocity": {
@@ -445,6 +449,7 @@ MORSE_DATASTREAM_DICT = {
             "ros": 'morse.middleware.ros.read_pose.PoseReader',
             "socket": INTERFACE_DEFAULT_IN,
             "yarp": INTERFACE_DEFAULT_IN,
+            "mavlink": 'morse.middleware.mavlink.local_position_ned_to_waypoint.WaypointActuator',
             }
         },
     "morse.actuators.stabilized_quadrotor.StabilizedQuadrotor": {
