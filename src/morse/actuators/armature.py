@@ -1,5 +1,6 @@
 import logging; logger = logging.getLogger("morse." + __name__)
 import math
+from types import *
 from morse.core.blenderapi import mathutils
 
 from collections import OrderedDict
@@ -204,13 +205,12 @@ class Armature(morse.core.actuator.Actuator):
             raise MorseRPCInvokationError(msg)
 
         channel = armature.channels[joint]
-
         if self._is_prismatic(channel):
             return channel, True
         else:
             return channel, False
 
-    def _get_joint_value(self, joint):
+    def _get_joint_value(self, joint, tuple=None):
         """
         Returns the *value* of a given joint, either:
         - its absolute rotation in radian along its rotation axis, or
@@ -221,14 +221,20 @@ class Armature(morse.core.actuator.Actuator):
         :param joint: the name of the joint in the armature.
         """
         channel, is_prismatic = self._get_joint(joint)
-
+        if not tuple:
         # Retrieve the motion axis
-        axis_index = next(i for i, j in enumerate(self.find_dof(channel)) if j)
-
-        if is_prismatic:
-            return channel.pose_head[2] #The 'Z' value
-        else: # revolute joint
-            return channel.joint_rotation[axis_index]
+            axis_index = next(i for i, j in enumerate(self.find_dof(channel)) if j)
+    
+            if is_prismatic:
+                return channel.pose_head[2] #The 'Z' value
+            else: # revolute joint
+                return channel.joint_rotation[axis_index]
+            
+        else:
+            if is_prismatic:
+                return (0.0,0.0,channel.pose_head[2]) #The 'Z' value
+            else: # revolute joint
+                return (channel.joint_rotation[0],channel.joint_rotation[1],channel.joint_rotation[2])
 
     def _get_prismatic(self, joint):
         """ Checks a given prismatic joint name exist in the armature, and
@@ -256,10 +262,26 @@ class Armature(morse.core.actuator.Actuator):
         return channel
 
     def _clamp_joint(self, channel, rotation):
-
-        ik_min, ik_max = self.get_IK_limits(channel.name)
-        return max(ik_min, min(rotation, ik_max))
-
+        
+        ik_limits = self.get_IK_limits(channel.name)
+        if type(rotation) is float:
+            axis_index = next(i for i, j in enumerate(self.find_dof(channel)) if j)
+            if axis_index == 0:
+                ik_min = ik_limits[0]
+                ik_max = ik_limits[1]
+            elif axis_index == 1:
+                ik_min = ik_limits[2] 
+                ik_max = ik_limits[3]
+            elif axis_index == 2:
+                ik_min = ik_limits[4] 
+                ik_max = ik_limits[5]
+        
+            return max(ik_min, min(rotation, ik_max))
+        elif type(rotation) is tuple:
+            return (max(ik_limits[0], min(rotation[0], ik_limits[1])),
+                    max(ik_limits[2], min(rotation[1], ik_limits[3])),
+                    max(ik_limits[4], min(rotation[2], ik_limits[5])))
+            
     @service
     def list_IK_targets(self):
         return [ik.name for ik in self._ik_targets.keys()]
@@ -426,16 +448,18 @@ class Armature(morse.core.actuator.Actuator):
 
         channel = self._get_prismatic(joint)
 
-        # Retrieve the translation axis
-        axis_index = next(i for i, j in enumerate(self.find_dof(channel)) if j)
-
         translation = self._clamp_joint(channel, translation)
 
         self.local_data[channel.name] = translation
 
-        tmp = channel.location
-        tmp[axis_index] = translation
-        channel.location = tmp
+        if type(translation) is float:
+            # Retrieve the translation axis
+            axis_index = next(i for i, j in enumerate(self.find_dof(channel)) if j)
+            tmp = channel.location
+            tmp[axis_index] = translation
+            channel.location = tmp
+        elif type(translation) is tuple:
+            channel.location = translation
 
     @service
     def set_translations(self, translations):
@@ -547,16 +571,23 @@ class Armature(morse.core.actuator.Actuator):
 
         channel = self._get_revolute(joint)
 
-        # Retrieve the translation axis
-        axis_index = next(i for i, j in enumerate(self.find_dof(channel)) if j)
-
-        rotation = self._clamp_joint(channel, rotation)
-
-        self.local_data[channel.name] = rotation
-
-        tmp = channel.joint_rotation
-        tmp[axis_index] = rotation
-        channel.joint_rotation = tmp
+        # Retrieve the translation axis 
+        if type(rotation) is float:
+            axis_index = next(i for i, j in enumerate(self.find_dof(channel)) if j)
+    
+            rotation = self._clamp_joint(channel, rotation)
+    
+            self.local_data[channel.name] = rotation
+    
+            tmp = channel.joint_rotation
+            tmp[axis_index] = rotation
+            channel.joint_rotation = tmp
+            
+        elif type(rotation) is tuple:
+            rotation = self._clamp_joint(channel, rotation)
+            self.local_data[channel.name] = rotation
+            channel.joint_rotation = rotation
+            
 
     @service
     def set_rotations(self, rotations):
@@ -582,6 +613,7 @@ class Armature(morse.core.actuator.Actuator):
         :sees: `set_rotation`
         :param rotations: a set of absolute rotations, in radians
         """
+        print("IAM HERE ALSOO")
         armature = self.bge_object
 
         nb_rot = min(len(rotations), len(armature.channels))
@@ -635,9 +667,8 @@ class Armature(morse.core.actuator.Actuator):
         :param joint_rotations: a list of mapping {name of the armature's joint: rotation in radian}
         :param speed: (default: value of 'radial_speed' property) rotation speed for all joints, in rad/s
         """
-
         self._suspend_ik_targets()
-
+        print("VALLAH DA BURA")
         for joint, rotation in joint_rotations.items():
             channel = self._get_revolute(joint) # checks the joint exist and is revolute
             rotation = self._clamp_joint(channel, rotation)
@@ -653,6 +684,7 @@ class Armature(morse.core.actuator.Actuator):
         The dof has to be a blender_ik_setting.
         Returns a list [x,y,z] with the corresponding dofs as a boolean.
         """
+        #print("Joint {} can rotate in {} {} {}  ".format(channel.name, channel.ik_dof_x, channel.ik_dof_y, channel.ik_dof_z))
         return [channel.ik_dof_x, 
                 channel.ik_dof_y,
                 channel.ik_dof_z]
@@ -698,20 +730,15 @@ class Armature(morse.core.actuator.Actuator):
         channel, is_prismatic = self._get_joint(joint)
 
         if is_prismatic:
-            return 0.0, channel.ik_stretch
+            return (0.0, channel.ik_stretch,
+                    0.0, channel.ik_stretch,
+                    0.0, channel.ik_stretch)
         else:
             # Retrieve the translation axis
-            axis_index = next(i for i, j in enumerate(self.find_dof(channel)) if j)
-            if axis_index == 0:
-                return (channel.ik_min_x, 
-                        channel.ik_max_x)
-            elif axis_index == 1:
-                return (channel.ik_min_y, 
-                        channel.ik_max_y)
-            elif axis_index == 2:
-                return (channel.ik_min_z, 
-                        channel.ik_max_z)
-
+            return (channel.ik_min_x, channel.ik_max_x,
+                    channel.ik_min_y, channel.ik_max_y,
+                    channel.ik_min_z, channel.ik_max_z)
+            
             assert False # should not reach this point.
 
     @async_service
@@ -753,7 +780,7 @@ class Armature(morse.core.actuator.Actuator):
 
         :param trajectory: the trajectory to execute, as describe above.
         """
-
+        print("AHANDA BUDA")
         self._suspend_ik_targets()
 
         # TODO: support velocities and accelerations via cubic/quintic spline
@@ -770,7 +797,7 @@ class Armature(morse.core.actuator.Actuator):
 
         t = self.robot_parent.gettime()
         trajectory = self._active_trajectory
-
+        print("HERE I AM")
         try:
             if time_isafter(trajectory["starttime"], t):
                 return
@@ -797,9 +824,18 @@ class Armature(morse.core.actuator.Actuator):
 
                     for joint in target.keys():
                         # compute the distance based on actual current joint pose
-                        dist = target[joint] - self._get_joint_value(joint)
-                        self.joint_speed[joint] = dist/allocated_time
-
+                        if type(target[joint]) is float:
+                            dist = target[joint] - self._get_joint_value(joint)
+                            self.joint_speed[joint] = dist/allocated_time
+                        elif type(target[joint]) is tuple:
+                            dist_x = target[joint][0] - self._get_joint_value(joint,'tuple')[0]
+                            dist_y = target[joint][1] - self._get_joint_value(joint,'tuple')[1]
+                            dist_z = target[joint][2] - self._get_joint_value(joint,'tuple')[2]
+                            speed_x = dist_x/allocated_time
+                            speed_y = dist_y/allocated_time
+                            speed_z = dist_z/allocated_time
+                            self.joint_speed[joint] = (speed_x, speed_y, speed_z)
+                            
                     self.local_data = target
 
                     p["started"] = True
@@ -919,46 +955,105 @@ class Armature(morse.core.actuator.Actuator):
             is_prismatic = self._is_prismatic(channel)
 
             joint = channel.name
-
-            if joint in self.joint_speed and self.joint_speed[joint]:
-                speed = self.joint_speed[joint]
-            else:
-                speed = self.linear_speed if is_prismatic else self.radial_speed
-
-
-            # Retrieve the rotation or translation axis
-            axis_index = next(i for i, j in enumerate(self.find_dof(channel)) if j)
-
-            if is_prismatic:
-                # we take the last index ('Z') of the pose of the HEAD of the
-                # bone as the absolute translation of the joint. Not 100% sure
-                # it is right...
-                dist = self.local_data[joint] - channel.pose_head[2] 
-            else:
-                dist = self.local_data[joint] - channel.joint_rotation[axis_index]
-
-            w = math.copysign(speed / self.frequency, dist)
-
-            if is_prismatic:
-                if not abs(dist) < self.distance_tolerance:
-                    position_reached = False
-
-                    trans = channel.location
-                    trans[axis_index] += w
-                    channel.location = trans
-            else:
-                if not abs(dist) < self.angle_tolerance:
-                    position_reached = False
-
-                    rot = channel.joint_rotation
-                    rot[axis_index] += w
-                    channel.joint_rotation = rot
-
+            if type(self.local_data[joint]) is float:
+                if joint in self.joint_speed and self.joint_speed[joint]:
+                    speed = self.joint_speed[joint]
+                else:
+                    speed = self.linear_speed if is_prismatic else self.radial_speed
+    
+                # Retrieve the rotation or translation axis
+                axis_index = next(i for i, j in enumerate(self.find_dof(channel)) if j)
+    
+                if is_prismatic:
+                    # we take the last index ('Z') of the pose of the HEAD of the
+                    # bone as the absolute translation of the joint. Not 100% sure
+                    # it is right...
+                    dist = self.local_data[joint] - channel.pose_head[2] 
+                else:
+                    dist = self.local_data[joint] - channel.joint_rotation[axis_index]
+    
+                w = math.copysign(speed / self.frequency, dist)
+    
+                if is_prismatic:
+                    if not abs(dist) < self.distance_tolerance:
+                        position_reached = False
+    
+                        trans = channel.location
+                        trans[axis_index] += w
+                        channel.location = trans
+                else:
+                    if not abs(dist) < self.angle_tolerance:
+                        position_reached = False
+    
+                        rot = channel.joint_rotation
+                        #print(channel.name)
+                        #print(rot)
+                        #print (axis_index)
+                        rot[axis_index] += w
+                        #rot[axis_index+1] += w
+                        channel.joint_rotation = rot
+                        
+            elif type(self.local_data[joint]) is tuple:
+                if joint in self.joint_speed and self.joint_speed[joint][0]:
+                    speed_x = self.joint_speed[joint][0]
+                else:
+                    speed_x = self.linear_speed if is_prismatic else self.radial_speed
+                if joint in self.joint_speed and self.joint_speed[joint][1]:
+                    speed_y = self.joint_speed[joint][1]
+                else:
+                    speed_y = self.linear_speed if is_prismatic else self.radial_speed
+                if joint in self.joint_speed and self.joint_speed[joint][2]:
+                    speed_z = self.joint_speed[joint][2]
+                else:
+                    speed_z = self.linear_speed if is_prismatic else self.radial_speed
+    
+                # Retrieve the rotation or translation axis
+                #axis_index = next(i for i, j in enumerate(self.find_dof(channel)) if j)
+    
+                if is_prismatic:
+                    # we take the last index ('Z') of the pose of the HEAD of the
+                    # bone as the absolute translation of the joint. Not 100% sure
+                    # it is right...
+                    print('TODO: handle for tuple')
+                    dist = self.local_data[joint] - channel.pose_head[2] 
+                else:
+                    dist_x = self.local_data[joint][0] - channel.joint_rotation[0]
+                    dist_y = self.local_data[joint][1] - channel.joint_rotation[1]
+                    dist_z = self.local_data[joint][2] - channel.joint_rotation[2]
+    
+                w_x = math.copysign(speed_x / self.frequency, dist_x)
+                w_y = math.copysign(speed_y / self.frequency, dist_y)
+                w_z = math.copysign(speed_z / self.frequency, dist_z)
+    
+                if is_prismatic:
+                    if not (abs(dist_x) < self.distance_tolerance and 
+                            abs(dist_y) < self.distance_tolerance and
+                            abs(dist_z) < self.distance_tolerance):
+                        position_reached = False
+    
+                        trans = channel.location
+                        trans[0] += w_x
+                        trans[1] += w_y
+                        trans[2] += w_z
+                        channel.location = trans
+                else:
+                    if not (abs(dist_x) < self.angle_tolerance and 
+                            abs(dist_y) < self.angle_tolerance and
+                            abs(dist_z) < self.angle_tolerance):
+                        position_reached = False
+    
+                        rot = channel.joint_rotation
+                        rot[0] += w_x
+                        rot[1] += w_y
+                        rot[2] += w_z
+                        channel.joint_rotation = rot
+            
             # Update the armature to reflect the changes with just performed
             armature.update()
 
 
         if position_reached: # True only when all joints match local_data
+            #print("Really matched !!")
             if not self._active_trajectory: # _exec_traj() manage completion for trajectories
                 self.completed(status.SUCCESS, None)
             if joint in self.joint_speed:

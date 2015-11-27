@@ -132,7 +132,7 @@ class ArmaturePose(morse.core.sensor.Sensor):
         if not self._armature_actuator:
             self._get_armature_actuator()
 
-        return self._armature_actuator._get_joint_value(joint) # reuse helper functions from armature actuator
+        return self._armature_actuator._get_joint_value(joint,tuple) # reuse helper functions from armature actuator
 
     @service
     def get_joints_length(self):

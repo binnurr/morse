@@ -21,12 +21,14 @@ def ros_timer(callable_obj, frequency):
     rate = rospy.Rate(frequency)
 
     rospy.logdebug("Starting timer")
+    
     while not rospy.is_shutdown():
         try:
             rate.sleep()
             callable_obj()
         except rospy.exceptions.ROSInterruptException:
             rospy.logdebug("Sleep interrupted")
+            
 
 
 class RosAction:
@@ -68,7 +70,7 @@ class RosAction:
 
         # read the frequency with which to publish status from the parameter server
         # (taken from actionlib/action_server.py)
-        self.status_frequency = rospy.get_param(self.name + "/status_frequency", 5.0)
+        self.status_frequency = rospy.get_param(self.name + "/status_frequency", 30.0)
 
         status_list_timeout = rospy.get_param(self.name + "/status_list_timeout", 5.0)
         self.status_list_timeout = rospy.Duration(status_list_timeout)
@@ -112,7 +114,7 @@ class RosAction:
 
     def on_goal(self, goal):
         logger.info("Got a new goal for ROS action " + self.name)
-
+    
         # Workaround for encoding issues (-> goal_id.id comes as bytes,
         # and must be converted to string before being reserialized)
         id = actionlib_msgs.msg.GoalID(id = goal.goal_id.id,

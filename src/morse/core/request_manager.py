@@ -304,11 +304,12 @@ class RequestManager(object):
         completed or not.
         On completion, it calls the :py:meth:`on_service_completion` method.
         """
-
+	
         if self._completed_requests:
             for request, result in list(self._completed_requests.items()):
                 if result:
-                    logger.debug(str(self) + ": Request " + str(request) + " is now completed.")
+                    print("haha", self._pending_requests)
+                    logger.info(str(self) + ": Request " + str(request) + " is now completed.")
                     del self._pending_requests[request]
                     del self._completed_requests[request]
                     self.on_service_completion(request, result)
