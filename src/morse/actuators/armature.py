@@ -780,7 +780,7 @@ class Armature(morse.core.actuator.Actuator):
 
         :param trajectory: the trajectory to execute, as describe above.
         """
-        print("AHANDA BUDA")
+        #print("TRAJECTORY")
         self._suspend_ik_targets()
 
         # TODO: support velocities and accelerations via cubic/quintic spline
@@ -797,7 +797,7 @@ class Armature(morse.core.actuator.Actuator):
 
         t = self.robot_parent.gettime()
         trajectory = self._active_trajectory
-        print("HERE I AM")
+        #print("EXECUTE TRAJECTORY")
         try:
             if time_isafter(trajectory["starttime"], t):
                 return

@@ -130,7 +130,7 @@ class ArmatureController(MorseOverlay):
 
         traj["points"] = points
         logger.info(traj)
-        print("Ros overlay!")
+        #print("Ros overlay!")
         self.overlaid_object.trajectory(
                 self.chain_callback(self.joint_trajectory_action_result),
                 traj)

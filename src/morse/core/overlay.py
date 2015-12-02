@@ -17,7 +17,7 @@ class MorseOverlay(AbstractObject):
     As of MORSE 0.4, only services can currently be overlaid.
     """
 
-    # Make this an abstract class 
+    # Make this an abstract class
     __metaclass__ = ABCMeta
 
     def __init__ (self, overlaid_object):
