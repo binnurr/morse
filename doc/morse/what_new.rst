@@ -39,13 +39,29 @@ Actuators
   (``rotate_joints`` and ``translate_joints``) that let the user set the
   rotations/translations of only a subset of the armature's joints by providing
   a custom mapping ``{joint name: value}``.
+- The :doc:`user/actuators/rotorcraft_attitude` has been extended to be able
+  to control the rotorcraft in yaw rate or in absolute yaw (using the
+  ``YawRateControl`` property). If it is the case, you can configure if you
+  want to configure to use ``normal yaw`` or ``north`` using the
+  property ``UseAngleAgainstNorth``. Last, you can configure the actuator to
+  use a linear or quadratic thrust model using ``LinearThrust``.
+- Introduce the :doc:`user/actuators/drag` "actuator" which allows to simulate
+  the drag (air resistance) force opposite to the move of the robot. It allows
+  more realistic simulation (if desired).
+- Introduce the :doc:`user/actuators/external_force` actuator which allows to 
+  apply external force (typically force from the environment such as wind) to
+  a robot. It has the same interface than :doc:`user/actuators/force_torque`,
+  but apply force in the global frame.
 
 
 Sensors
 +++++++
 
 - **longitude**, **latitude** and **altitude** are not anymore properties of
-  :doc:`user/sensors/gps` but must be set at the environment level.
+  :doc:`user/sensors/gps` but must be set at the environment level. Moreover,
+  the property **angle_against_north** allows to configure the angle between
+  the X-axis and the geographic north (must be positive when the Blender
+  X-axis is East of true North, negative if is West of true North).
 - Introduce the new high-level sensor :doc:`user/sensors/attitude`, allowing
   to compute the attitude of the system
 - Introduce the sensor :doc:`user/sensors/magnetometer`, which allows to
@@ -61,9 +77,10 @@ Sensors
 Modifiers
 +++++++++
 
-- Introduce ECEF and Geodetic modifiers, allowing to convert coordinates from
-  Blender world to ECEF-r or Geodetic coordinates (and vice-versa). It should
-  improve interoperability with flight systems in general.
+- Introduce ECEF, Geodetic, Geocentric modifiers, allowing to convert
+  coordinates from Blender world to ECEF-r or Geodetic or Geocentric
+  coordinates (and vice-versa). It should improve interoperability with flight
+  systems in general.
 - Introduce Feet modifier, to convert imperial units to meter buts (and
   vice-versa)
 

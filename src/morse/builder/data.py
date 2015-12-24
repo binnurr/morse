@@ -74,6 +74,13 @@ MORSE_MODIFIER_DICT = {
         'morse.actuators.waypoint.Waypoint': "morse.modifiers.geodetic.CoordinatesFromGeodetic",
         'morse.actuators.teleport.Teleport': "morse.modifiers.geodetic.CoordinatesFromGeodetic",
     },
+    'geocentric': {
+        'morse.sensors.pose.Pose': "morse.modifiers.geocentric.CoordinatesToGeocentric",
+        'morse.sensors.gps.GPS': "morse.modifiers.geocentric.CoordinatesToGeocentric",
+        'morse.actuators.destination.Destination': "morse.modifiers.geocentric.CoordinatesFromGeocentric",
+        'morse.actuators.waypoint.Waypoint': "morse.modifiers.geocentric.CoordinatesFromGeocentric",
+        'morse.actuators.teleport.Teleport': "morse.modifiers.geocentric.CoordinatesFromGeocentric",
+    },
     'UTM' : {
         'morse.sensors.pose.Pose': "morse.modifiers.utm.CoordinatesToUTM",
         'morse.sensors.gps.GPS': "morse.modifiers.utm.CoordinatesToUTM",
@@ -384,6 +391,13 @@ MORSE_DATASTREAM_DICT = {
             }
         },
     "morse.actuators.force_torque.ForceTorque": {
+        "default": {
+            "socket": INTERFACE_DEFAULT_IN,
+            "yarp": INTERFACE_DEFAULT_IN,
+            "ros": 'morse.middleware.ros.force_torque.WrenchReader',
+            }
+        },
+    "morse.actuators.externalForce.ExternalForce": {
         "default": {
             "socket": INTERFACE_DEFAULT_IN,
             "yarp": INTERFACE_DEFAULT_IN,

@@ -2,7 +2,6 @@ import logging; logger = logging.getLogger("morse." + __name__)
 from morse.core import blenderapi
 
 import morse.sensors.camera
-import morse.helpers.colors
 
 from morse.helpers import passive_objects
 from morse.helpers.components import add_data, add_property
@@ -184,7 +183,7 @@ class SemanticCamera(morse.sensors.camera.Camera):
                     logger.debug("transform = {t}".format(t=transformation))
                 else:
                     transformation = Transformation3d(obj)
-                obj_dict = {'name': obj.name,
+                obj_dict = {'name': obj.get('Label', obj.name),
                             'description': obj.get('Description', ''),
                             'type': obj.get('Type', ''),
                             'position': transformation.translation,

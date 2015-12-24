@@ -510,7 +510,7 @@ class Morse(object):
         # Handle robots created in loop. Basically, consider robot where
         # name match the pattern 'robot_XXX' and puts them in a list
         # called 'robots', allowing to iterate easily on them
-        robot_names = self.robots.copy()
+        robot_names = self.robots[:]
         robot_names.sort()
         while robot_names:
             name = robot_names.pop(0)
@@ -597,7 +597,8 @@ class Morse(object):
                 self.simulator_service.publish(raw)
                 # if self.is_up() and response_callback.condition.wait(timeout):
                 # XXX Python 3.2.2 is_up() returns False when connecting...
-                if response_callback.condition.wait(timeout):
+                response_callback.condition.wait(timeout)
+                if response_callback.response:
                     return rpc_get_result(response_callback.response)
         finally:
             self.simulator_service.unsubscribe(response_callback.callback)

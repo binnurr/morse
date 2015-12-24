@@ -5,29 +5,29 @@ from morse.helpers.coordinates import CoordinateConverter
 from math import degrees, radians
 import numpy
 
-class Geodeticmodifier(AbstractModifier):
+class Geocentricmodifier(AbstractModifier):
     """ 
     This modifier converts the coordinates from MORSE simulator (in LTP)
-    into Geodetic coordinates.
+    into Geocentric coordinates.
 
     To work properly, you need to configure the following variables at
     the environment level:
         - **longitude** in degrees (double) of Blender origin
         - **latitude** in degrees (double) of Blender origin
         - **altitude** in m  of the Blender origin
-    The Geodetic modifier provides as modifiers:
+    The Geocentric modifier provides as modifiers:
     
-    * :py:class:`morse.modifiers.ecef.CoordinatesToGeodetic`
-    * :py:class:`morse.modifiers.ecef.CoordinatesFromGeodetic`
+    * :py:class:`morse.modifiers.ecef.CoordinatesToGeocentric`
+    * :py:class:`morse.modifiers.ecef.CoordinatesFromGeocentric`
     """
     
-    _name = "Geodetic"
+    _name = "Geocentric"
 
     def initialize(self):
         self.converter = CoordinateConverter.instance()
 
-class CoordinatesToGeodetic(Geodeticmodifier):
-    """ Converts from Blender coordinates to Geodetic coordinates.
+class CoordinatesToGeocentric(Geocentricmodifier):
+    """ Converts from Blender coordinates to Geocentric coordinates.
     """
     def modify(self):
         try:
@@ -37,8 +37,9 @@ class CoordinatesToGeodetic(Geodeticmodifier):
                     self.data['y'],
                     self.data['z']
                     ])
-            xt = self.converter.ltp_to_geodetic(
-                    self.converter.blender_to_ltp(xe))
+            xt = self.converter.ecef_to_geocentric(
+                    self.converter.ltp_to_ecef(
+                    self.converter.blender_to_ltp(xe)))
 
             logger.debug("%s => %s" % (xe, xt))
 
@@ -48,19 +49,21 @@ class CoordinatesToGeodetic(Geodeticmodifier):
         except KeyError as detail:
             self.key_error(detail)
 
-class CoordinatesFromGeodetic(Geodeticmodifier):
-    """ Converts from Geodetic coordinates to Blender coordinates.
+class CoordinatesFromGeocentric(Geocentricmodifier):
+    """ Converts from Geocentric coordinates to Blender coordinates.
     """
     def modify(self):
         try:
+            logger.info(self.data)
             xe = numpy.matrix(
                     [
                     radians(self.data['x']),
                     radians(self.data['y']),
                     self.data['z']
                     ])
-            xt = self.converter.ltp_to_blender(
-                    self.converter.geodetic_to_ltp(xe))
+            xt = self.converter.blender_to_ltp(
+                    self.converter.ecef_to_ltp(
+                    self.converter.geocentric_to_ecef(xe)))
 
             logger.debug("%s => %s" % (xe, xt))
 

@@ -129,8 +129,17 @@ class Environment(AbstractComponent):
         If a name is already set (with 'obj.name=...'), it is used as it,
         and only the hierarchy is added to the name.
         """
+        import inspect
+        frame = inspect.currentframe()
+        frames = inspect.getouterframes(frame)
+        size_stack = len(frames)
+        for i in range(size_stack - 1, 0, -1):
+            if frames[i][3] == '__init__':
+                break
+        del frame
+        del frames
 
-        AbstractComponent.close_context(3)
+        AbstractComponent.close_context(i + 2)
 
         for component in AbstractComponent.components:
             if isinstance(component, Robot):
@@ -371,6 +380,16 @@ class Environment(AbstractComponent):
 
         hud_text = bpymorse.get_object('Keys_text')
         hud_text.scale.y = 0.027 # to fit the HUD_plane
+
+        # Create a cube to compute the dt between two frames
+        _dt_name = '__morse_dt_analyser'
+        cube = Cube(_dt_name)
+        cube.scale = (0.01, 0.01, 0.01)
+        cube.location = [0.0, 0.0, -5000.0]
+        cube_obj = bpymorse.get_object(_dt_name)
+        cube_obj.game.physics_type = 'DYNAMIC'
+        cube_obj.hide_render = True
+        cube_obj.game.lock_location_z = True
 
         self._created = True
         # in case we are in edit mode, do not exit on error with CLI

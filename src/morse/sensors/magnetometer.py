@@ -33,7 +33,8 @@ class MagnetoDriver(object):
 
     def compute(self, pose):
         pos = numpy.matrix(pose.translation)
-        pos_lla = self._coord_conv.ltp_to_geodetic(pos)
+        pos_ltp = self._coord_conv.blender_to_ltp(pos)
+        pos_lla = self._coord_conv.ltp_to_geodetic(pos_ltp)
         (decl, incl, f, h, x, y, z) = self._mag.compute(
                                  degrees(pos_lla[0, 0]),
                                  degrees(pos_lla[0, 1]),
@@ -55,6 +56,10 @@ class Magnetometer(morse.core.sensor.Sensor):
             - **longitude** in degrees (double) of Blender origin
             - **latitude** in degrees (double) of Blender origin
             - **altitude** in m  of the Blender origin
+            - optionnaly **angle_against_north** in degrees is the angle
+              between geographic north and the blender X axis.
+              **angle_against_north** is positive when the blender X-axis is
+              east of true north, and negative when it is to the west.
     """
 
     _name = "Magnetometer"

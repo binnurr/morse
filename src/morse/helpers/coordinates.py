@@ -1,14 +1,14 @@
 import logging; logger = logging.getLogger("morse." + __name__)
-from math import sqrt, cos, sin, tan, atan, radians, degrees
+from math import sqrt, cos, sin, tan, atan, atan2, radians, degrees, pi
 from morse.core import blenderapi
+from morse.helpers.morse_math import normalise_angle
 import numpy
 
 class CoordinateConverter:
     """ Allow to convert coordinates from Geodetic to LTP to ECEF-r ... """
     A  = 6378137.0 # WGS-84 Earth semi-major axis
-    B = 6356752.3142 # WGS-84 Second semi-major axis
+    F = 1 / 298.257223563 # WGS-84 flattening
     ECC = 8.181919191e-2 # first excentricity
-    F = (A - B) / A # Flatenning
     R = 6378137.0 # Radius of Earth at equator
     A2 = A**2
     ECC2 = ECC**2
@@ -16,7 +16,7 @@ class CoordinateConverter:
 
     _instance = None
     
-    def __init__(self, latitude, longitude, altitude):
+    def __init__(self, latitude, longitude, altitude, angle_east_blender_x):
         P = [radians(longitude), radians(latitude), altitude]
         self.origin_ecef = self.geodetic_to_ecef(numpy.matrix(P))
         _rot = \
@@ -25,6 +25,13 @@ class CoordinateConverter:
            [cos(P[1]) * cos(P[0]), cos(P[1]) * sin(P[0]), sin(P[1])]]
         self._rot_ltp_ecef = numpy.matrix(_rot)
         self._rot_ecef_ltp = self._rot_ltp_ecef.T
+        _rot_east_x = \
+         [[cos(angle_east_blender_x), -sin(angle_east_blender_x), 0],
+          [sin(angle_east_blender_x), cos(angle_east_blender_x),  0],
+          [0, 0, 1]]
+        self._angle_east = angle_east_blender_x
+        self._rot_blender_ltp = numpy.matrix(_rot_east_x )
+        self._rot_ltp_blender = self._rot_blender_ltp.T
 
     @staticmethod
     def instance():
@@ -34,10 +41,16 @@ class CoordinateConverter:
                 latitude = ssr["latitude"]
                 longitude = ssr["longitude"]
                 altitude = ssr["altitude"]
+                try:
+                    angle_against_east = radians(ssr["angle_against_north"]) - pi / 2
+                except KeyError as e:
+                    angle_against_east = 0.0
                 CoordinateConverter._instance = \
-                    CoordinateConverter(latitude, longitude, altitude)
+                    CoordinateConverter(latitude, longitude, altitude, 
+                                        angle_against_east)
             except KeyError as e:
                 logger.error("Missing environment parameter %s\n", e)
+
         return CoordinateConverter._instance
 
     def geodetic_to_ecef(self, P):
@@ -113,3 +126,40 @@ class CoordinateConverter:
         cc = h * cos_lat + self.R * cos(lat_surface)
         lat_geoc = atan(s1 / cc)
         return degrees(lat_geoc)
+
+    def geocentric_to_ecef(self, xt):
+        longitude = xt[0, 0]
+        latitude = xt[0, 1]
+        radius =  xt[0, 2]
+        clon = cos(longitude)
+        slon = sin(longitude)
+        clat = cos(latitude)
+        slat = sin(latitude)
+        return radius * numpy.matrix([
+            clat * clon,
+            clat * slon,
+            slat])
+
+    def ecef_to_geocentric(self, xt):
+        x = xt[0, 0]
+        y = xt[0, 1]
+        z = xt[0, 2]
+        longitude = atan2(y, x)
+        nxy = sqrt(x * x + y * y)
+        latitude = atan2(z, nxy);
+        radius = sqrt(x * x + y * y + z * z)
+        return numpy.matrix([longitude, latitude, radius])
+
+    def blender_to_ltp(self, xt):
+        return xt * self._rot_blender_ltp
+
+    def ltp_to_blender(self,  xt):
+        return xt * self._rot_ltp_blender
+
+    def angle_against_geographic_north(self, orientation):
+        """
+        Return the angle against geographic_north, as returned by a compass, i.e.
+        between [0, 2 pi], clockwise
+        """
+        return pi / 2 - (orientation[2] - self._angle_east)
+
